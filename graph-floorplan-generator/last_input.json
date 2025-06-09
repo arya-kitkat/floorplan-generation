@@ -1,0 +1,1 @@
+{"outer_width": 10, "outer_height": 10, "holes": [], "rooms": {"A": [2, 2, 3, 3], "B": [1, 2, 3, 3]}, "edges": [["A", "B"]]}
