@@ -7,7 +7,7 @@ from tkinter import messagebox
 # Import your algorithm
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__))) #converts this file's path into absolute to extract just directory where it can look for GN_assignment next
 from GN_assignment import find_valid_solution, compute_stretch
 
 # Dark mode color scheme
@@ -22,16 +22,16 @@ BUTTON_ACTIVE = "#5a5a5a"
 
 # Room colors (similar to your image)
 ROOM_COLORS = {
-    "A": "#90EE90",  # Light green
-    "B": "#FFB366",  # Orange  
-    "C": "#87CEEB",  # Sky blue
-    "D": "#4682B4",  # Steel blue
-    "E": "#D3D3D3",  # Light gray
-    "F": "#FFFF99",  # Light yellow
-    "G": "#D8BFD8",  # Thistle
-    "H": "#9370DB",  # Medium purple
-    "I": "#F0E68C",  # Khaki
-    "J": "#DDA0DD"   # Plum
+    "A": "#F9EA4C",  
+    "B": "#6BA9FB",  
+    "C": "#FC9595",  
+    "D": "#0193F5",  
+    "E": "#FC73BE",  
+    "F": "#FBD9A7",  
+    "G": "#E37AE3",  
+    "H": "#9F78EF",  
+    "I": "#CCFFCC",  
+    "J": "#BAB7BA"   
 }
 
 user_inputs = {}
@@ -72,30 +72,30 @@ def save_inputs():
 def load_inputs():
     if not os.path.exists(SAVE_FILE):
         return
-    with open(SAVE_FILE, "r") as f:
-        data = json.load(f)
-        entry_width.insert(0, str(data.get("outer_width", "")))
-        entry_height.insert(0, str(data.get("outer_height", "")))
-        entry_num_holes.insert(0, str(len(data.get("holes", []))))
+    with open(SAVE_FILE, "r") as f: # Opens the save file (last_input.json) in read mode ("r"); Uses a context manager (with) to ensure proper file handling/closure; f becomes the file object
+        data = json.load(f) #loads entire json file into a python dictionary called data
+        entry_width.insert(0, str(data.get("outer_width", ""))) #data.get("outer_width", ""): Safely gets value for "outer_width" key, returns empty string if not found
+        entry_height.insert(0, str(data.get("outer_height", ""))) #str(): Converts the value to string (input fields need text)
+        entry_num_holes.insert(0, str(len(data.get("holes", [])))) #entry_width.insert(0, ...): Inserts this text at position 0 (beginning) of the "Width" input field
         adj_text = data.get("edges_text", "")
         text_edges.delete("1.0", "end")
         text_edges.insert("1.0", adj_text)
         
-        generate_hole_fields()
-        for i, hole in enumerate(data.get("holes", [])):
+        generate_hole_fields() #First creates empty input fields for holes based on the saved count
+        for i, hole in enumerate(data.get("holes", [])): #enumerate() allows you to loop through data["holes"] and get the index (i) for each hole, each hole is a list/ tuple of 4 values [x,y,w,h] looped over by j: thus upadating all 4 fields of each hole
             for j in range(4):
                 hole_entries[i][j].insert(0, str(hole[j]))
 
         room_labels_saved = data.get("room_labels", {})
 
-        for name, room_data in data.get("rooms", {}).items():
+        for name, room_data in data.get("rooms", {}).items(): #This fetches the value of "rooms" in the dictionary data, If "rooms" does not exist, it defaults to an empty dictionary ({}) to prevent errors; For dictionaries, .items() returns each key-value ("A":"dimensions + label") pair as a tuple. 
             if name in room_entries:
-                if isinstance(room_data, (tuple, list)):
+                if isinstance(room_data, (tuple, list)): #Checks if the data for this room is a tuple or list (old-style data format)
                     dims = room_data
                     label = name
                 elif isinstance(room_data, dict):
                     dims = room_data.get("dims", (0,0,0,0))
-                    label = room_data.get("label", name)
+                    label = room_data.get("label", name) 
                 else:
                     dims = (0,0,0,0)
                     label = name
@@ -110,35 +110,31 @@ def load_inputs():
                 room_entries[name][2].insert(0, str(dims[2]))
                 room_entries[name][3].insert(0, str(dims[3]))
                 room_entries[name][4].insert(0, label)
-
-        text_edges.insert("1.0", "\n".join(f"{a} {b}" for a, b in data.get("edges", [])))
-
 room_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
 def submit_data(event=None):
     try:
-        # Validate main dimensions
-        if not entry_width.get() or not entry_height.get():
+        if not entry_width.get() or not entry_height.get():   #Checks if the outer grid's width/height fields are empty. Shows an error if missing
             messagebox.showerror("Input Error", "Outer grid dimensions must be specified")
             return
 
-        outer_width = int(entry_width.get())
+        outer_width = int(entry_width.get()) #Converts input values to integers. Handles empty hole count as 0
         outer_height = int(entry_height.get())
-        num_holes = int(entry_num_holes.get()) if entry_num_holes.get() else 0
+        num_holes = int(entry_num_holes.get()) if entry_num_holes.get() else 0 
 
         holes = []
         for i in range(num_holes):
             if (not hole_entries[i][0].get() or not hole_entries[i][1].get() or
-                not hole_entries[i][2].get() or not hole_entries[i][3].get()):
-                continue
+                not hole_entries[i][2].get() or not hole_entries[i][3].get()): #Processes holes.If any field is missing, skips this hole entirely (continue) since cant convert blank string to int: error prevention
+                continue 
             try:
-                x = int(hole_entries[i][0].get())
-                y = int(hole_entries[i][1].get()) 
+                x = int(hole_entries[i][0].get()) #For holes with all fields filled, tries to convert inputs to integers
+                y = int(hole_entries[i][1].get()) #Creates a tuple (x, y, w, h) with hole coordinates/size
                 w = int(hole_entries[i][2].get())
                 h = int(hole_entries[i][3].get())
-                holes.append((x, y, w, h))
+                holes.append((x, y, w, h)) # Adds this hole to the holes list
             except ValueError:
-                messagebox.showerror("Input Error", f"Invalid hole #{i+1} dimensions")
+                messagebox.showerror("Input Error", f"Invalid hole #{i+1} dimensions") #If conversion to integers fails (non-numeric input), shows error with hole number
                 return
 
         rooms = {}
@@ -220,8 +216,7 @@ def generate_layout():
             user_inputs["edges"], 
             user_inputs["outer_width"], 
             user_inputs["outer_height"], 
-            user_inputs["holes"]
-        )
+            user_inputs["holes"])
         
         if initial_layout is None:
             messagebox.showerror("Algorithm Error", "No valid layout found by the algorithm")
@@ -236,8 +231,7 @@ def generate_layout():
             used_edges, 
             user_inputs["outer_width"], 
             user_inputs["outer_height"], 
-            user_inputs["holes"]
-        )
+            user_inputs["holes"])
         
         print("Stretch computation complete")
         
@@ -290,12 +284,6 @@ def draw_layout():
         
         # Draw holes first (so they appear behind rooms)
         draw_holes(offset_x, offset_y, scale, height)
-        
-        # Draw adjacency lines (green) - behind rooms
-        draw_adjacency_lines(offset_x, offset_y, scale, height)
-        
-        # Draw unsatisfied adjacency lines (red dashed) - behind rooms  
-        draw_unsatisfied_adjacency_lines(offset_x, offset_y, scale, height)
         
         # Draw rooms on top
         for room_id, room_data in room_placements.items():
@@ -351,6 +339,12 @@ def draw_layout():
                 font=("Arial", 7),
                 anchor="center"
             )
+
+            # Draw adjacency lines (green) - on top of rooms
+            draw_adjacency_lines(offset_x, offset_y, scale, height)
+        
+            # Draw unsatisfied adjacency lines (red dashed) - on top of rooms  
+            draw_unsatisfied_adjacency_lines(offset_x, offset_y, scale, height)
         
     except Exception as e:
         print(f"Error drawing layout: {e}")
@@ -390,7 +384,7 @@ def draw_adjacency_lines(offset_x, offset_y, scale, grid_height):
             layout_canvas.create_line(
                 x1, y1, x2, y2,
                 fill="lime",      # Bright green
-                width=4
+                width=2
             )
 
 def draw_unsatisfied_adjacency_lines(offset_x, offset_y, scale, grid_height):
@@ -414,8 +408,8 @@ def draw_unsatisfied_adjacency_lines(offset_x, offset_y, scale, grid_height):
             layout_canvas.create_line(
                 x1, y1, x2, y2,
                 fill="red",
-                width=3,
-                dash=(8, 4)
+                width=2,
+                dash=(8,4)
             )
 
 def on_hole_entry_change(*args):
